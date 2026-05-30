@@ -2,7 +2,7 @@ SKIPUNZIP=0
 
 ui_print " "
 ui_print "|=================================="
-ui_print "| hfdem PowerTune v2.2.0"
+ui_print "| hfdem PowerTune $(unzip -p "$ZIPFILE" module.prop 2>/dev/null | grep "^version=" | cut -d'=' -f2)"
 ui_print "| 作者：温柔浩"
 ui_print "|=================================="
 ui_print " "
@@ -28,6 +28,26 @@ else
 fi
 
 unzip -o "$ZIPFILE" -d "$MODPATH" >&2
+
+getVolumeKey() {
+  sleep 1
+  while true; do
+    keyInfo=$(getevent -qlc 1 | grep KEY_VOLUME)
+    [ -n "$keyInfo" ] && { echo "$keyInfo" | grep -q KEY_VOLUMEUP && return 0 || return 1; }
+  done
+}
+
+ui_print " "
+ui_print "- 是否开启 GPU 动态调频？"
+ui_print "  音量+ 开启 / 音量- 关闭"
+
+if getVolumeKey; then
+    echo "GPU_BOOST_ENABLED=1" > "$MODPATH/gpu_boost.conf"
+    ui_print "  [OK] GPU 动态调频已开启"
+else
+    echo "GPU_BOOST_ENABLED=0" > "$MODPATH/gpu_boost.conf"
+    ui_print "  [--] GPU 动态调频已关闭"
+fi
 
 # 检测是否为小米设备
 if [ -d "/mi_ext" ] || [ -d "/dev/mi_display" ]; then
