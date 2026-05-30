@@ -24,14 +24,14 @@
 
 | Scene模式 | GPU频率上限 | 温控Boost | 适用场景 |
 |-----------|-----------|----------|---------|
-| **powersave** | 221MHz（最低） | OFF | 极致省电 |
-| **balance** | 221MHz（最低） | OFF | 日常使用 |
-| **performance** | 370MHz | ON | 轻度游戏/高性能需求 |
-| **fast** | 690MHz（不限制） | ON | 重度游戏 |
+| **powersave** | 最低频 | OFF | 极致省电 |
+| **balance** | 中低频 | OFF | 日常使用 |
+| **performance** | 中高频 | ON | 轻度游戏/高性能需求 |
+| **fast** | 最高频 | ON | 重度游戏 |
 
 ## 安装方法
 
-1. 下载 `hfdem-PowerTune-v2.2.0.zip`
+1. 从 [Releases](https://github.com/wenrouhao/hfdem-PowerTune/releases) 下载最新版 ZIP
 2. 打开 KernelSU 管理器
 3. 选择「模块」→「从本地安装」
 4. 选择下载的 ZIP 文件
@@ -54,7 +54,7 @@
 刷入重启后，KernelSU 管理器中的模块描述会实时显示：
 
 ```
-hfdem PowerTune v2.2.0 | GPU: 省电(221MHz) | 温控: 🔴 OFF | 2026-05-28 20:15:30
+hfdem PowerTune v2.3.0 | GPU: 省电(221MHz) | 温控: 🔴 OFF | 2026-05-28 20:15:30
 ```
 
 - GPU：当前频率档位
@@ -72,6 +72,7 @@ hfdem PowerTune v2.2.0 | GPU: 省电(221MHz) | 温控: 🔴 OFF | 2026-05-28 20:
 
 | 版本 | 更新内容 |
 |------|---------|
+| v2.3.0 | GPU动态调频改为运行时读取频率表；刷入时可选开启；powersave和balance分开处理 |
 | v2.2.0 | 改名 PowerTune；修复 devfreq max_freq 限制；移除 sconfig 管理避免与 Eclipse 冲突；添加手动Boost覆盖机制 |
 | v2.1.0 | GPU动态调频按Scene模式控制；移除 mi_thermald 停止；install.sh 兼容 KernelSU |
 | v2.0.0 | 初始版本，基于 hfdem 省电补丁 |
