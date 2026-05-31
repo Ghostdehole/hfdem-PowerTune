@@ -26,19 +26,6 @@ _status() {
 NUM_PWRLVL="$(cat $KGSL/num_pwrlevels 2>/dev/null)"
 MIN_PWRLVL="$((NUM_PWRLVL - 1))"
 
-read_freq_table() {
-    local raw=""
-    [ -f "$KGSL/gpu_available_frequencies" ] && raw=$(cat "$KGSL/gpu_available_frequencies" 2>/dev/null)
-    [ -z "$raw" ] && [ -f "$KGSL/devfreq/available_frequencies" ] && raw=$(cat "$KGSL/devfreq/available_frequencies" 2>/dev/null)
-    [ -z "$raw" ] && return 1
-    FREQ_COUNT=0
-    for f in $raw; do
-        FREQ_TABLE[$FREQ_COUNT]=$f
-        FREQ_COUNT=$((FREQ_COUNT + 1))
-    done
-    return 0
-}
-
 _set_gpu_unlock() {
     _wval "0" "$KGSL/max_pwrlevel"
     _wval "$MIN_PWRLVL" "$KGSL/min_pwrlevel"
@@ -53,43 +40,12 @@ _set_gpu_unlock() {
     done
 }
 
-_set_gpu_lock() {
-    local pwr="$1"
-    local freq="$2"
-    _wval "$pwr" "$KGSL/max_pwrlevel"
-    _wval "$pwr" "$KGSL/min_pwrlevel"
-    for df in /sys/class/devfreq/*kgsl-3d0; do
-        [ -d "$df" ] && {
-            _wval "$freq" "$df/max_freq"
-            _wval "$freq" "$df/min_freq"
-        }
-    done
-}
-
 _set_gpu_governor() {
     local mod_pct="$1"
-    _set_gpu_unlock
     for df in /sys/class/devfreq/*kgsl-3d0; do
         [ -d "$df" ] && _wval "$mod_pct" "$df/mod_percent"
     done
 }
-
-if read_freq_table; then
-    _max_idx=$((FREQ_COUNT - 1))
-    _idx_2_3=$(( _max_idx * 2 / 3 ))
-    _idx_1_3=$(( _max_idx / 3 ))
-    GPU_FREQ_POWERSAVE=${FREQ_TABLE[$_max_idx]}
-    GPU_FREQ_BALANCE=${FREQ_TABLE[$_idx_2_3]}
-    GPU_FREQ_PERFORMANCE=${FREQ_TABLE[$_idx_1_3]}
-    PWR_POWERSAVE=$_max_idx
-    PWR_BALANCE=$_idx_2_3
-    PWR_PERFORMANCE=$_idx_1_3
-    FREQ_TABLE_READY=1
-else
-    t=$(_get_time)
-    echo "[$t] 无法读取GPU频率表，省电/均衡/性能回退到mod_percent" >> "$LOG"
-    FREQ_TABLE_READY=0
-fi
 
 _boost_on() {
     [ -f "$BOOST" ] && return
@@ -118,13 +74,8 @@ _set_mode() {
 
     case "$mode" in
         powersave)
-            if [ "$FREQ_TABLE_READY" = "1" ]; then
-                _set_gpu_lock "$PWR_POWERSAVE" "$GPU_FREQ_POWERSAVE"
-                gpu_label="锁频$((${GPU_FREQ_POWERSAVE}/1000000))MHz"
-            else
-                _set_gpu_governor "100"
-                gpu_label="调频100%"
-            fi
+            _set_gpu_governor "80"
+            gpu_label="调频80%"
             if [ ! -f "$MANUAL" ]; then
                 [ -f "$BOOST" ] && _boost_off
                 thermal_label="🔴 OFF"
@@ -133,13 +84,8 @@ _set_mode() {
             fi
             ;;
         balance)
-            if [ "$FREQ_TABLE_READY" = "1" ]; then
-                _set_gpu_lock "$PWR_BALANCE" "$GPU_FREQ_BALANCE"
-                gpu_label="锁频$((${GPU_FREQ_BALANCE}/1000000))MHz"
-            else
-                _set_gpu_governor "100"
-                gpu_label="调频100%"
-            fi
+            _set_gpu_governor "100"
+            gpu_label="调频100%"
             if [ ! -f "$MANUAL" ]; then
                 [ -f "$BOOST" ] && _boost_off
                 thermal_label="🔴 OFF"
@@ -148,13 +94,8 @@ _set_mode() {
             fi
             ;;
         performance)
-            if [ "$FREQ_TABLE_READY" = "1" ]; then
-                _set_gpu_lock "$PWR_PERFORMANCE" "$GPU_FREQ_PERFORMANCE"
-                gpu_label="锁频$((${GPU_FREQ_PERFORMANCE}/1000000))MHz"
-            else
-                _set_gpu_governor "120"
-                gpu_label="调频120%"
-            fi
+            _set_gpu_governor "120"
+            gpu_label="调频120%"
             if [ ! -f "$MANUAL" ]; then
                 [ -f "$BOOST" ] && _boost_off
                 thermal_label="🔴 OFF"
@@ -181,6 +122,8 @@ _set_mode() {
 
 while [ "$(getprop sys.boot_completed)" != "1" ]; do sleep 3; done
 sleep 5
+
+_set_gpu_unlock
 
 CUR=""
 while [ -z "$CUR" ]; do
