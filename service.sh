@@ -114,6 +114,8 @@ init_gpu_unlock() {
 
     [ -f "$KGSL/default_pwrlevel" ] && write_val "$MIN_PWRLVL" "$KGSL/default_pwrlevel"
     [ -f "$KGSL/min_pwrlevel" ] && write_val "$MIN_PWRLVL" "$KGSL/min_pwrlevel"
+    [ -f "$KGSL/max_pwrlevel" ] && write_val "0" "$KGSL/max_pwrlevel"
+    [ -f "$KGSL/thermal_pwrlevel" ] && write_val "0" "$KGSL/thermal_pwrlevel"
     [ -f "$KGSL/throttling" ] && write_val "0" "$KGSL/throttling"
     [ -f "$KGSL/force_bus_on" ] && write_val "0" "$KGSL/force_bus_on"
     [ -f "$KGSL/bus_split" ] && write_val "0" "$KGSL/bus_split"
@@ -121,7 +123,7 @@ init_gpu_unlock() {
     for freq_path in /sys/class/devfreq/*kgsl-3d0; do
         [ -d "$freq_path" ] && {
             [ -f "$freq_path/min_freq" ] && write_val "0" "$freq_path/min_freq"
-            [ -f "$freq_path/max_freq" ] && write_val "690000000" "$freq_path/max_freq"
+            [ -f "$freq_path/max_freq" ] && write_val "2147483647" "$freq_path/max_freq"
         }
     done
 }
