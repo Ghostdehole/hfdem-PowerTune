@@ -14,11 +14,17 @@
 
 | 功能 | 说明 |
 |------|------|
-| 系统优化 | TCP参数调优、IO调度优化、内存管理优化、后台进程数限制 |
-| GPU动态调频 | 参考Yuni内核，解锁GPU频率限制，通过mod_percent控制调频器激进度 |
+| CPU优化 | 解除频率限制、禁用核心控制(core_ctl)、设置msm_performance频率范围、后台限小核(cpuset)、IRQ中断限小核(smp_affinity)、禁用LPM限制、PELT加速 |
+| GPU优化 | 解锁频率限制(pwrlevel/throttling/devfreq/gpu_clk)、允许低功耗状态(force_clk_on/force_no_nap/force_rail_on/bcl)、动态调频(mod_percent) |
+| 总线优化 | DDR/LLCC/L3频率上限、DDRQOS配置 |
+| 内存优化 | swappiness=1、min_free_kbytes=64MB、透明大页(THP)、多代LRU、LMKD参数、vm参数调优 |
+| IO优化 | none调度器、禁用iostats/nomerges、128KB预读 |
+| 网络优化 | 13个TCP参数调优（autocorking/tw_reuse/fin_timeout/缓冲区等） |
+| Android配置 | 不限制缓存/幽灵进程数、禁用minfree级别、禁用压缩 |
+| MIUI优化 | 停止无用服务、禁用SPC/MMS/MFZ/DAMON等内存管理、ART虚拟机优化、LMKD参数 |
 | 温控Boost | 极致模式自动放宽温控阈值到105°C，其他模式保持100°C |
-| 手动Boost | 通过 KernelSU Actions 按钮手动切换，不会被自动控制覆盖 |
-| 兼容Eclipse | 不停止 mi_thermald，不修改 sconfig，与定制温控模块互不冲突 |
+| 手动Boost | DCVS总线满速+GPU超频+UFS满速+温控放宽，通过Actions按钮切换 |
+| 兼容Eclipse | 不停止mi_thermald，与定制温控模块互不冲突 |
 
 ## Scene 接管 schedhorizon 调度后的四种模式对应策略
 
@@ -72,7 +78,7 @@ hfdem PowerTune v2.3.2 | GPU: 调频100% | 温控: 🔴 OFF | 2026-05-28 20:15:3
 
 | 版本 | 更新内容 |
 |------|---------|
-| v2.3.2 | 参考Yuni重构GPU控制：解锁频率限制+mod_percent四档调频；温控只在极致模式ON；开机读取当前模式；版本号动态获取 |
+| v2.4.0 | 全面优化：新增CPU优化(corectl/cpuset/smp_affinity/perfhal/LPM/PELT)、总线优化(bus_dcvs)、内存优化(swappiness/min_free_kbytes)、GPU补充(force_clk_on/force_no_nap/bcl/max_gpu_clk)；删除空的post-fs-data.sh；修复sconfig一致性；修复init_thp逻辑；手动Boost补充DCVS/UFS/GPU Governor |
 | v2.3.1 | GPU动态频率范围+开机读取当前模式+兼容任何频率表 |
 | v2.3.0 | GPU动态调频改为运行时读取频率表；刷入时可选开启；powersave和balance分开处理 |
 | v2.2.0 | 改名 PowerTune；修复 devfreq max_freq 限制；移除 sconfig 管理避免与 Eclipse 冲突；添加手动Boost覆盖机制 |

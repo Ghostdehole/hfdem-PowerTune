@@ -7,12 +7,9 @@ USE_THP="$(awk 'NR==1{if (int($2/1024/1024) < 10) print false; else print true;}
 init_thp() {
     THP_PATH=/sys/kernel/mm/transparent_hugepage
     [ -d "$THP_PATH" ] || return
-    MEM_TOTAL=$(awk '/^MemTotal:/{print $2}' /proc/meminfo)
-    [ "$MEM_TOTAL" -ge 10485760 ] || return
+    write_val "always" $THP_PATH/enabled
     if [ "$USE_THP" = "false" ]; then
         write_val "madvise" $THP_PATH/enabled
-    else
-        write_val "always" $THP_PATH/enabled
     fi
     write_val "defer+madvise" $THP_PATH/defrag
     write_val "within_size" $THP_PATH/shmem_enabled
@@ -40,6 +37,8 @@ init_mem() {
     write_val "150" /proc/sys/vm/watermark_scale_factor
     write_val "15000" /proc/sys/vm/watermark_boost_factor
     write_val "1" /proc/sys/vm/overcommit_memory
+    write_val "1" /proc/sys/vm/swappiness
+    write_val "65536" /proc/sys/vm/min_free_kbytes
     write_val "5" /proc/sys/vm/dirty_ratio
     write_val "2" /proc/sys/vm/dirty_background_ratio
     write_val "60" /proc/sys/vm/dirtytime_expire_seconds
@@ -112,20 +111,82 @@ init_gpu_unlock() {
     local NUM_PWRLVL="$(cat $KGSL/num_pwrlevels 2>/dev/null)"
     local MIN_PWRLVL="$((NUM_PWRLVL - 1))"
 
-    [ -f "$KGSL/default_pwrlevel" ] && write_val "$MIN_PWRLVL" "$KGSL/default_pwrlevel"
-    [ -f "$KGSL/min_pwrlevel" ] && write_val "$MIN_PWRLVL" "$KGSL/min_pwrlevel"
-    [ -f "$KGSL/max_pwrlevel" ] && write_val "0" "$KGSL/max_pwrlevel"
-    [ -f "$KGSL/thermal_pwrlevel" ] && write_val "0" "$KGSL/thermal_pwrlevel"
-    [ -f "$KGSL/throttling" ] && write_val "0" "$KGSL/throttling"
+    [ -f "$KGSL/default_pwrlevel" ] && lock_val "$MIN_PWRLVL" "$KGSL/default_pwrlevel"
+    [ -f "$KGSL/min_pwrlevel" ] && lock_val "$MIN_PWRLVL" "$KGSL/min_pwrlevel"
+    [ -f "$KGSL/max_pwrlevel" ] && lock_val "0" "$KGSL/max_pwrlevel"
+    [ -f "$KGSL/thermal_pwrlevel" ] && lock_val "0" "$KGSL/thermal_pwrlevel"
+    [ -f "$KGSL/throttling" ] && lock_val "0" "$KGSL/throttling"
     [ -f "$KGSL/force_bus_on" ] && write_val "0" "$KGSL/force_bus_on"
     [ -f "$KGSL/bus_split" ] && write_val "0" "$KGSL/bus_split"
+    [ -f "$KGSL/force_clk_on" ] && write_val "0" "$KGSL/force_clk_on"
+    [ -f "$KGSL/force_no_nap" ] && write_val "0" "$KGSL/force_no_nap"
+    [ -f "$KGSL/force_rail_on" ] && write_val "0" "$KGSL/force_rail_on"
+    [ -f "$KGSL/bcl" ] && write_val "0" "$KGSL/bcl"
+    [ -f "$KGSL/max_gpu_clk" ] && lock_val "2147483647" "$KGSL/max_gpu_clk"
+    [ -f "$KGSL/max_clock_mhz" ] && lock_val "2147483647" "$KGSL/max_clock_mhz"
+    [ -f "$KGSL/min_clock_mhz" ] && lock_val "0" "$KGSL/min_clock_mhz"
+
+    [ -f /sys/kernel/gpu/gpu_max_clock ] && lock_val "2147483647" /sys/kernel/gpu/gpu_max_clock
+    [ -f /sys/kernel/gpu/gpu_min_clock ] && lock_val "0" /sys/kernel/gpu/gpu_min_clock
 
     for freq_path in /sys/class/devfreq/*kgsl-3d0; do
         [ -d "$freq_path" ] && {
-            [ -f "$freq_path/min_freq" ] && write_val "0" "$freq_path/min_freq"
-            [ -f "$freq_path/max_freq" ] && write_val "2147483647" "$freq_path/max_freq"
+            [ -f "$freq_path/min_freq" ] && lock_val "0" "$freq_path/min_freq"
+            [ -f "$freq_path/max_freq" ] && lock_val "2147483647" "$freq_path/max_freq"
         }
     done
+}
+
+init_cpu_freq() {
+    lock_val_in_path "2147483647" "/sys/devices/system/cpu/cpufreq" "scaling_max_freq"
+}
+
+init_bus_dcvs() {
+    local BUS_DIR="/sys/devices/system/cpu/bus_dcvs"
+    [ -d "$BUS_DIR" ] || return
+    lock_val_in_path "10900000" "$BUS_DIR/DDR" "max_freq"
+    lock_val_in_path "806000" "$BUS_DIR/LLCC" "max_freq"
+    lock_val_in_path "20000000" "$BUS_DIR/L3" "max_freq"
+    lock_val_in_path "0" "$BUS_DIR" "min_freq"
+    lock_val_in_path "0" "$BUS_DIR" "boost_freq"
+    lock_val_in_path "1" "$BUS_DIR/DDRQOS" "boost_freq"
+}
+
+init_corectl() {
+    lock_val_in_path "1" "/sys/devices/system/cpu" "core_ctl" "enable"
+    lock_val_in_path "99" "/sys/devices/system/cpu" "core_ctl" "min_cpus"
+    lock_val_in_path "99" "/sys/devices/system/cpu" "core_ctl" "max_cpus"
+    lock_val_in_path "0" "/sys/devices/system/cpu" "core_ctl" "enable"
+}
+
+init_perfhal() {
+    [ -f /sys/kernel/msm_performance/parameters/cpu_min_freq ] || return
+    write_val "0:100000 1:100000 2:100000 3:100000 4:100000 5:100000 6:100000 7:100000" /sys/kernel/msm_performance/parameters/cpu_min_freq
+    write_val "0:9999999 1:9999999 2:9999999 3:9999999 4:9999999 5:9999999 6:9999999 7:9999999" /sys/kernel/msm_performance/parameters/cpu_max_freq
+}
+
+init_cpuset() {
+    local LITTLE_LIST="$(cat /sys/devices/system/cpu/cpu0/topology/package_cpus_list 2>/dev/null)"
+    local ALL_LIST="$(cat /sys/devices/system/cpu/present 2>/dev/null)"
+    [ -n "$LITTLE_LIST" ] && [ -n "$ALL_LIST" ] || return
+    rmdir /dev/cpuset/foreground/boost 2>/dev/null
+    lock_val "$LITTLE_LIST" /dev/cpuset/background/cpus
+    lock_val "$LITTLE_LIST" /dev/cpuset/system-background/cpus
+    lock_val "$ALL_LIST" /dev/cpuset/foreground/cpus
+    lock_val "$ALL_LIST" /dev/cpuset/top-app/cpus
+    lock_val "$LITTLE_LIST" /proc/irq/default_smp_affinity
+    lock_val_in_path "$LITTLE_LIST" "/proc/irq" "smp_affinity_list"
+}
+
+init_lpm() {
+    for f in /sys/devices/system/cpu/qcom_lpm/*disable*; do
+        [ -f "$f" ] && lock_val "0" "$f"
+    done
+}
+
+init_sched() {
+    [ -f /proc/sys/kernel/sched_pelt_multiplier ] && write_val "4" /proc/sys/kernel/sched_pelt_multiplier
+    [ -f /sys/kernel/rcu_expedited ] && lock_val "0" /sys/kernel/rcu_expedited
 }
 
 nohup sh "$MODDIR/boost_monitor.sh" "$MODDIR" &
@@ -136,6 +197,13 @@ wait_until_login
 init_network
 init_android_config
 init_miui_disable
+init_cpu_freq
+init_bus_dcvs
+init_corectl
+init_perfhal
+init_cpuset
+init_lpm
+init_sched
 init_gpu_unlock
 init_io
 init_mem

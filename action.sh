@@ -22,6 +22,21 @@ _boost_on() {
         grep -Eq "cpu|gpu" "$i/type" 2>/dev/null && _wval "105000" "$i/trip_point_2_temp"
     done
     _wval "10" /sys/class/thermal/thermal_message/sconfig
+    local BUS_DIR="/sys/devices/system/cpu/bus_dcvs"
+    [ -d "$BUS_DIR/DDRQOS" ] && {
+        _wval "1" "$BUS_DIR/DDRQOS/max_freq"
+        _wval "1" "$BUS_DIR/DDRQOS/boost_freq"
+        _wval "1" "$BUS_DIR/DDRQOS/min_freq"
+    }
+    for df in /sys/class/devfreq/*kgsl-3d0; do
+        [ -d "$df" ] && [ -f "$df/mod_percent" ] && _wval "120" "$df/mod_percent"
+    done
+    for df in /sys/class/devfreq/*ufs*; do
+        [ -d "$df" ] && {
+            [ -f "$df/max_freq" ] && _wval "2147483646" "$df/max_freq"
+            [ -f "$df/min_freq" ] && _wval "2147483646" "$df/min_freq"
+        }
+    done
     touch "$BOOST"
     echo "on" > "$MANUAL"
     local t=$(_get_time)
@@ -35,6 +50,14 @@ _boost_off() {
         grep -Eq "cpu|gpu" "$i/type" 2>/dev/null && _wval "100000" "$i/trip_point_2_temp"
     done
     _wval "0" /sys/class/thermal/thermal_message/sconfig
+    local BUS_DIR="/sys/devices/system/cpu/bus_dcvs"
+    [ -d "$BUS_DIR/DDRQOS" ] && _wval "0" "$BUS_DIR/DDRQOS/min_freq"
+    for df in /sys/class/devfreq/*kgsl-3d0; do
+        [ -d "$df" ] && [ -f "$df/mod_percent" ] && _wval "100" "$df/mod_percent"
+    done
+    for df in /sys/class/devfreq/*ufs*; do
+        [ -d "$df" ] && [ -f "$df/min_freq" ] && _wval "0" "$df/min_freq"
+    done
     rm -f "$BOOST"
     echo "off" > "$MANUAL"
     local t=$(_get_time)

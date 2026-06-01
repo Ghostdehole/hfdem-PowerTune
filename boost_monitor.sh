@@ -17,6 +17,7 @@ GPU_BOOST_ENABLED=0
 
 _get_time() { date "+%Y-%m-%d %H:%M:%S"; }
 _wval() { chmod 0644 "$2" 2>/dev/null; echo "$1" > "$2" 2>/dev/null; }
+_lock_val() { chmod 0644 "$2" 2>/dev/null; echo "$1" > "$2" 2>/dev/null; chmod 0444 "$2" 2>/dev/null; }
 _get_ver() { grep "^version=" "$PROP" 2>/dev/null | cut -d= -f2; }
 _status() {
     local ver=$(_get_ver)
@@ -27,15 +28,24 @@ NUM_PWRLVL="$(cat $KGSL/num_pwrlevels 2>/dev/null)"
 MIN_PWRLVL="$((NUM_PWRLVL - 1))"
 
 _set_gpu_unlock() {
-    _wval "0" "$KGSL/max_pwrlevel"
-    _wval "$MIN_PWRLVL" "$KGSL/min_pwrlevel"
-    _wval "$MIN_PWRLVL" "$KGSL/default_pwrlevel"
-    _wval "0" "$KGSL/thermal_pwrlevel"
-    _wval "0" "$KGSL/throttling"
+    _lock_val "0" "$KGSL/max_pwrlevel"
+    _lock_val "$MIN_PWRLVL" "$KGSL/min_pwrlevel"
+    _lock_val "$MIN_PWRLVL" "$KGSL/default_pwrlevel"
+    _lock_val "0" "$KGSL/thermal_pwrlevel"
+    _lock_val "0" "$KGSL/throttling"
+    [ -f "$KGSL/force_clk_on" ] && _wval "0" "$KGSL/force_clk_on"
+    [ -f "$KGSL/force_no_nap" ] && _wval "0" "$KGSL/force_no_nap"
+    [ -f "$KGSL/force_rail_on" ] && _wval "0" "$KGSL/force_rail_on"
+    [ -f "$KGSL/bcl" ] && _wval "0" "$KGSL/bcl"
+    [ -f "$KGSL/max_gpu_clk" ] && _lock_val "2147483647" "$KGSL/max_gpu_clk"
+    [ -f "$KGSL/max_clock_mhz" ] && _lock_val "2147483647" "$KGSL/max_clock_mhz"
+    [ -f "$KGSL/min_clock_mhz" ] && _lock_val "0" "$KGSL/min_clock_mhz"
+    [ -f /sys/kernel/gpu/gpu_max_clock ] && _lock_val "2147483647" /sys/kernel/gpu/gpu_max_clock
+    [ -f /sys/kernel/gpu/gpu_min_clock ] && _lock_val "0" /sys/kernel/gpu/gpu_min_clock
     for df in /sys/class/devfreq/*kgsl-3d0; do
         [ -d "$df" ] && {
-            _wval "0" "$df/min_freq"
-            _wval "2147483647" "$df/max_freq"
+            _lock_val "0" "$df/min_freq"
+            _lock_val "2147483647" "$df/max_freq"
         }
     done
 }
@@ -43,7 +53,7 @@ _set_gpu_unlock() {
 _set_gpu_governor() {
     local mod_pct="$1"
     for df in /sys/class/devfreq/*kgsl-3d0; do
-        [ -d "$df" ] && _wval "$mod_pct" "$df/mod_percent"
+        [ -d "$df" ] && _lock_val "$mod_pct" "$df/mod_percent"
     done
 }
 
@@ -52,6 +62,7 @@ _boost_on() {
     for i in /sys/class/thermal/t*; do
         grep -Eq "cpu|gpu" "$i/type" 2>/dev/null && _wval "105000" "$i/trip_point_2_temp"
     done
+    _wval "10" /sys/class/thermal/thermal_message/sconfig
     touch "$BOOST"
     local t=$(_get_time)
     echo "[$t] Boost ON" >> "$LOG"
@@ -62,6 +73,7 @@ _boost_off() {
     for i in /sys/class/thermal/t*; do
         grep -Eq "cpu|gpu" "$i/type" 2>/dev/null && _wval "100000" "$i/trip_point_2_temp"
     done
+    _wval "0" /sys/class/thermal/thermal_message/sconfig
     rm -f "$BOOST"
     local t=$(_get_time)
     echo "[$t] Boost OFF" >> "$LOG"
