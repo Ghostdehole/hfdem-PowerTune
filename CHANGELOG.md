@@ -1,5 +1,9 @@
 # hfdem PowerTune 更新日志
 
+## v2.4.3-beta
+- 删除 init_cpu_freq，解决打开应用瞬时功耗高的问题
+- 保留 init_bus_dcvs，确保游戏数据吞吐
+
 ## v2.4.1
 - 添加 zram 重置为 zstd 压缩算法，提高压缩率 30-50%
 - init_zram 提前到 boot_complete 之前，开机即生效

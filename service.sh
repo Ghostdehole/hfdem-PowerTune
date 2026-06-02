@@ -151,10 +151,6 @@ init_gpu_unlock() {
     done
 }
 
-init_cpu_freq() {
-    lock_val_in_path "2147483647" "/sys/devices/system/cpu/cpufreq" "scaling_max_freq"
-}
-
 init_bus_dcvs() {
     local BUS_DIR="/sys/devices/system/cpu/bus_dcvs"
     [ -d "$BUS_DIR" ] || return
@@ -213,7 +209,6 @@ wait_until_login
 init_network
 init_android_config
 init_miui_disable
-init_cpu_freq
 init_bus_dcvs
 init_corectl
 init_perfhal
