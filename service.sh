@@ -32,10 +32,10 @@ init_thp() {
 
 init_zram_per() {
     swapoff "/dev/block/zram$1" 2>/dev/null
-    write_val "1" "/sys/class/block/zram$1/reset"
-    write_val "0" "/sys/class/block/zram$1/mem_limit"
-    write_val "$2" "/sys/class/block/zram$1/comp_algorithm"
-    write_val "$(awk 'NR==1{print $2*2048}' /proc/meminfo)" "/sys/class/block/zram$1/disksize"
+    echo "1" > "/sys/class/block/zram$1/reset"
+    echo "0" > "/sys/class/block/zram$1/mem_limit"
+    echo "$2" > "/sys/class/block/zram$1/comp_algorithm"
+    echo "$(awk 'NR==1{print $2*2048}' /proc/meminfo)" > "/sys/block/zram$1/disksize"
     mkswap "/dev/block/zram$1"
     /system/bin/swapon "/dev/block/zram$1"
 }
