@@ -1,10 +1,5 @@
 # hfdem PowerTune 更新日志
 
-## v2.4.2-beta
-- 取消 zram 重置为 zstd
-- 保留 swappiness=60
-- 测试纯 swappiness=60 的效果
-
 ## v2.4.1
 - 添加 zram 重置为 zstd 压缩算法，提高压缩率 30-50%
 - init_zram 提前到 boot_complete 之前，开机即生效
@@ -12,3 +7,18 @@
 
 ## v2.4.0
 - 全面优化 CPU/总线/内存/GPU/手动 Boost
+
+## v2.3.2
+- 省电模式 mod_percent 从 80% 改为 100% 避免潜在卡顿
+- README 同步更新
+
+## v2.3.1
+- 优化启动延迟和模式切换轮询间隔
+
+## v2.3.0
+- GPU 动态调频改为运行时读取频率表
+- 刷入时可选开启
+
+## v2.2.0
+- 初始版本
+- 基于 hfdem 内核及 schedhorizon 调度的功耗管理模块
