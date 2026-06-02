@@ -205,8 +205,6 @@ init_sched() {
 
 nohup sh "$MODDIR/boost_monitor.sh" "$MODDIR" &
 
-init_zram
-
 wait_until_boot_complete
 wait_until_login
 
