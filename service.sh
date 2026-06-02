@@ -30,6 +30,21 @@ init_thp() {
     write_val "6000" $THP_PATH/khugepaged/scan_sleep_millisecs
 }
 
+init_zram_per() {
+    swapoff "/dev/block/zram$1" 2>/dev/null
+    write_val "1" "/sys/class/block/zram$1/reset"
+    write_val "0" "/sys/class/block/zram$1/mem_limit"
+    write_val "$2" "/sys/class/block/zram$1/comp_algorithm"
+    write_val "$(awk 'NR==1{print $2*2048}' /proc/meminfo)" "/sys/class/block/zram$1/disksize"
+    mkswap "/dev/block/zram$1"
+    /system/bin/swapon "/dev/block/zram$1"
+}
+
+init_zram() {
+    grep -q zram /proc/swaps && return
+    init_zram_per "0" "zstd"
+}
+
 init_mem() {
     lmkd --reinit 2>/dev/null || reinit_lmkd
     write_val "20" /proc/sys/vm/compaction_proactiveness
@@ -45,6 +60,7 @@ init_mem() {
     [ -f /sys/kernel/mm/lru_gen/enabled ] && write_val "0x0007" /sys/kernel/mm/lru_gen/enabled
     [ -f /sys/kernel/mm/lru_gen/min_ttl_ms ] && write_val "1000" /sys/kernel/mm/lru_gen/min_ttl_ms
     [ -f /sys/module/pandora_config/parameters/enable_mm_vhs ] && write_val "Y" /sys/module/pandora_config/parameters/enable_mm_vhs
+    init_zram
     init_thp
 }
 
