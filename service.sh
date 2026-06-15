@@ -41,6 +41,10 @@ init_zram_per() {
 }
 
 init_zram() {
+    local cur=$(cat /sys/block/zram0/comp_algorithm 2>/dev/null | grep -oE '\[zstdp?\]' | tr -d '[]')
+    if [ "$cur" = "zstd" ] || [ "$cur" = "zstdp" ]; then
+        return
+    fi
     init_zram_per "0" "zstd"
 }
 

@@ -17,7 +17,7 @@
 | CPU优化 | 解除频率限制、禁用核心控制(core_ctl)、设置msm_performance频率范围、后台限小核(cpuset)、IRQ中断限小核(smp_affinity)、禁用LPM限制、PELT加速 |
 | GPU优化 | 解锁频率限制(pwrlevel/throttling/devfreq/gpu_clk)、允许低功耗状态(force_clk_on/force_no_nap/force_rail_on/bcl)、动态调频(mod_percent) |
 | 总线优化 | DDR/LLCC/L3频率上限、DDRQOS配置 |
-| 内存优化 | swappiness=1、min_free_kbytes=64MB、透明大页(THP)、多代LRU、LMKD参数、vm参数调优 |
+| 内存优化 | swappiness=60、min_free_kbytes=64MB、透明大页(THP)、多代LRU、LMKD参数、vm参数调优、zram zstd智能检测 |
 | IO优化 | none调度器、禁用iostats/nomerges、128KB预读 |
 | 网络优化 | 13个TCP参数调优（autocorking/tw_reuse/fin_timeout/缓冲区等） |
 | Android配置 | 不限制缓存/幽灵进程数、禁用minfree级别、禁用压缩 |
@@ -60,7 +60,7 @@
 刷入重启后，KernelSU 管理器中的模块描述会实时显示：
 
 ```
-hfdem PowerTune v2.3.2 | GPU: 调频100% | 温控: 🔴 OFF | 2026-05-28 20:15:30
+hfdem PowerTune v2.4.2 | GPU: 调频100% | 温控: 🔴 OFF | 2026-06-15 20:15:30
 ```
 
 - GPU：当前调频器百分比（100%/120%）
@@ -70,14 +70,16 @@ hfdem PowerTune v2.3.2 | GPU: 调频100% | 温控: 🔴 OFF | 2026-05-28 20:15:3
 ## 注意事项
 
 - 本模块基于 hfdem 内核优化，**不适用于其他内核**
-- 需要配合 schedhorizon 调度使用
+- 支持 schedhorizon 调度（Boost 自动）和 Scene 自带调度（Boost 需手动切换）
 - 不会停止 mi_thermald，与 Eclipse 定制温控模块兼容
 - Boost 日志保存在模块目录的 `boost.log` 中
+- 不可与 Yuni Kernel 附加模块同时使用，安装时会自动检测并取消
 
 ## 版本历史
 
 | 版本 | 更新内容 |
 |------|---------|
+| v2.4.2 | inotifyd事件驱动替代轮询、防原子替换、状态持久化、zram智能检测、DDRQOS节点修正、安装时检测Yuni Kernel冲突。inotifyd方案由 [旧夏](https://github.com/djt889) 提供 |
 | v2.4.0 | 全面优化：新增CPU优化(corectl/cpuset/smp_affinity/perfhal/LPM/PELT)、总线优化(bus_dcvs)、内存优化(swappiness/min_free_kbytes)、GPU补充(force_clk_on/force_no_nap/bcl/max_gpu_clk)；删除空的post-fs-data.sh；修复sconfig一致性；修复init_thp逻辑；手动Boost补充DCVS/UFS/GPU Governor |
 | v2.3.1 | GPU动态频率范围+开机读取当前模式+兼容任何频率表 |
 | v2.3.0 | GPU动态调频改为运行时读取频率表；刷入时可选开启；powersave和balance分开处理 |
@@ -88,3 +90,7 @@ hfdem PowerTune v2.3.2 | GPU: 调频100% | 温控: 🔴 OFF | 2026-05-28 20:15:3
 ## 作者
 
 温柔浩
+
+## 致谢
+
+- [旧夏](https://github.com/djt889) — 提供 inotifyd 事件驱动方案

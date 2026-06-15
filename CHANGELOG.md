@@ -1,12 +1,12 @@
 # hfdem PowerTune 更新日志
 
-## v2.4.4-beta
-- 删除 GPU force_clk_on/force_no_nap/force_rail_on/bcl 参数，解决打开应用瞬时功耗高的问题
-- GPU 恢复可进入低功耗状态
-
-## v2.4.3-beta
-- 删除 init_cpu_freq，解决打开应用瞬时功耗高的问题
-- 保留 init_bus_dcvs，确保游戏数据吞吐
+## v2.4.2
+- 监听方式从轮询改为 inotifyd 事件驱动，降低功耗、提升响应速度（方案来自 [旧夏](https://github.com/djt889)）
+- 防原子替换机制：监听文件删除事件，自动重绑定 inode
+- 状态持久化到 /dev/hfdem_last_mode，重启后不丢状态
+- zram 智能检测：已是 zstd/zstdp 则跳过重置，避免开机内存抖动
+- DDRQOS 改用 hw_max_freq/hw_min_freq 节点
+- 安装时检测 Yuni Kernel 附加模块，冲突时自动取消安装
 
 ## v2.4.1
 - 添加 zram 重置为 zstd 压缩算法，提高压缩率 30-50%

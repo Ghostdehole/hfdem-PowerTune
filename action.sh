@@ -10,6 +10,7 @@ PROP="$MODDIR/module.prop"
 
 _get_time() { date "+%Y-%m-%d %H:%M:%S"; }
 _wval() { chmod 0644 "$2" 2>/dev/null; echo "$1" > "$2" 2>/dev/null; }
+_lock_val() { chmod 0644 "$2" 2>/dev/null; echo "$1" > "$2" 2>/dev/null; chmod 0444 "$2" 2>/dev/null; }
 _get_ver() { grep "^version=" "$PROP" 2>/dev/null | cut -d= -f2; }
 _status() {
     local ver=$(_get_ver)
@@ -24,9 +25,9 @@ _boost_on() {
     _wval "10" /sys/class/thermal/thermal_message/sconfig
     local BUS_DIR="/sys/devices/system/cpu/bus_dcvs"
     [ -d "$BUS_DIR/DDRQOS" ] && {
-        _wval "1" "$BUS_DIR/DDRQOS/max_freq"
-        _wval "1" "$BUS_DIR/DDRQOS/boost_freq"
-        _wval "1" "$BUS_DIR/DDRQOS/min_freq"
+        _lock_val "1" "$BUS_DIR/DDRQOS/hw_max_freq"
+        _lock_val "1" "$BUS_DIR/DDRQOS/boost_freq"
+        _lock_val "1" "$BUS_DIR/DDRQOS/hw_min_freq"
     }
     for df in /sys/class/devfreq/*kgsl-3d0; do
         [ -d "$df" ] && [ -f "$df/mod_percent" ] && _wval "120" "$df/mod_percent"

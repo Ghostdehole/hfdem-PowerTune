@@ -7,6 +7,14 @@ ui_print "| 作者：温柔浩"
 ui_print "|=================================="
 ui_print " "
 
+if [ -d "/data/adb/modules/yuni_kernel" ]; then
+    ui_print "============================================"
+    ui_print "  检测到 Yuni Kernel 附加模块"
+    ui_print "  功能重复，安装已取消"
+    ui_print "============================================"
+    abort "  请卸载 Yuni Kernel 附加模块后重试"
+fi
+
 OLD_MOD="/data/adb/modules/hfdem_savemode"
 if [ -d "$OLD_MOD" ]; then
     ui_print "- 清除旧模块残留..."
@@ -59,7 +67,6 @@ fi
 set_perm_recursive $MODPATH 0 0 0755 0644
 set_perm $MODPATH/service.sh 0 0 0755
 set_perm $MODPATH/utils.sh 0 0 0755
-set_perm $MODPATH/post-fs-data.sh 0 0 0755
 set_perm $MODPATH/action.sh 0 0 0755
 set_perm $MODPATH/boost_monitor.sh 0 0 0755
 
