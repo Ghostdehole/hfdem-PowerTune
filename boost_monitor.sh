@@ -43,13 +43,6 @@ if [ "$1" = "w" ] || [ "$1" = "c" ] || [ "$1" = "y" ] || [ "$1" = "update" ]; th
             _lock_val "1" "$BUS_DIR/DDRQOS/boost_freq"
             _lock_val "1" "$BUS_DIR/DDRQOS/hw_min_freq"
         }
-        # UFS 拉满
-        for df in /sys/class/devfreq/*ufs*; do
-            [ -d "$df" ] && {
-                [ -f "$df/max_freq" ] && _wval "2147483646" "$df/max_freq"
-                [ -f "$df/min_freq" ] && _wval "2147483646" "$df/min_freq"
-            }
-        done
         touch "$BOOST"
         local t=$(_get_time)
         echo "[$t] Boost ON" >> "$LOG"
@@ -64,10 +57,6 @@ if [ "$1" = "w" ] || [ "$1" = "c" ] || [ "$1" = "y" ] || [ "$1" = "update" ]; th
         # DCVS 恢复
         local BUS_DIR="/sys/devices/system/cpu/bus_dcvs"
         [ -d "$BUS_DIR/DDRQOS" ] && _wval "0" "$BUS_DIR/DDRQOS/min_freq"
-        # UFS 恢复
-        for df in /sys/class/devfreq/*ufs*; do
-            [ -d "$df" ] && [ -f "$df/min_freq" ] && _wval "0" "$df/min_freq"
-        done
         rm -f "$BOOST"
         local t=$(_get_time)
         echo "[$t] Boost OFF" >> "$LOG"

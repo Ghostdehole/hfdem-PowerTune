@@ -3,7 +3,7 @@ SKIPUNZIP=0
 ui_print " "
 ui_print "|=================================="
 ui_print "| hfdem PowerTune $(unzip -p "$ZIPFILE" module.prop 2>/dev/null | grep "^version=" | cut -d'=' -f2)"
-ui_print "| 作者：温柔浩"
+ui_print "| 作者：Ghostdehole"
 ui_print "|=================================="
 ui_print " "
 

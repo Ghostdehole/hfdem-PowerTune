@@ -39,9 +39,7 @@ wait_until_login() {
     while [ "$(getprop sys.boot_completed)" != "1" ]; do
         sleep 3
     done
-    local i=0
-    while [ ! -d /data/data/android ] && [ $i -lt 30 ]; do
+    while [ "$(getprop sys.user.0.ce_available)" != "true" ]; do
         sleep 3
-        i=$((i + 1))
     done
 }

@@ -74,15 +74,11 @@ persist.imr.low.mi_mempool.wm.pages=0
 persist.imr.low.mi_mempool.free.wm.kb=0
 
 # Prefetchers
-persist.mm.enable.prefetch=false
 persist.sys.dynamic_usap_enabled=false
-persist.sys.preload.enable=false
 persist.sys.prestart.feedback.enable=false
-persist.sys.prestart.proc=false
 persist.sys.stability.iorapEnable=false
 
 # Sched
-persist.sys.miui_animator_sched.sched_threads=0
 persist.sf.force_setaffinity.bigcore=0
 persist.sys.rtmode_templimit_bottom=93
 persist.sys.rtmode_templimit_ceiling=95
@@ -103,8 +99,6 @@ persist.sys.perfdebug.monitor.enable=0
 # Display
 persist.sys.smartpower.display.enable=false
 persist.sys.smartpower.display_camera_fps_enable=false
-persist.sys.flingpromotion.enable=0
-ro.vendor.perf.scroll_opt=0
 persist.sys.mi.prerender=false
 
 # Haptics

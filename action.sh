@@ -32,12 +32,6 @@ _boost_on() {
     for df in /sys/class/devfreq/*kgsl-3d0; do
         [ -d "$df" ] && [ -f "$df/mod_percent" ] && _wval "120" "$df/mod_percent"
     done
-    for df in /sys/class/devfreq/*ufs*; do
-        [ -d "$df" ] && {
-            [ -f "$df/max_freq" ] && _wval "2147483646" "$df/max_freq"
-            [ -f "$df/min_freq" ] && _wval "2147483646" "$df/min_freq"
-        }
-    done
     touch "$BOOST"
     echo "on" > "$MANUAL"
     local t=$(_get_time)
@@ -55,9 +49,6 @@ _boost_off() {
     [ -d "$BUS_DIR/DDRQOS" ] && _wval "0" "$BUS_DIR/DDRQOS/min_freq"
     for df in /sys/class/devfreq/*kgsl-3d0; do
         [ -d "$df" ] && [ -f "$df/mod_percent" ] && _wval "100" "$df/mod_percent"
-    done
-    for df in /sys/class/devfreq/*ufs*; do
-        [ -d "$df" ] && [ -f "$df/min_freq" ] && _wval "0" "$df/min_freq"
     done
     rm -f "$BOOST"
     echo "off" > "$MANUAL"
